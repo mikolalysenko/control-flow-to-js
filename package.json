@@ -1,0 +1,29 @@
+{
+  "name": "control-flow-to-js",
+  "version": "0.0.0",
+  "description": "Converts a control flow graph back into JavaScript",
+  "main": "convert.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/mikolalysenko/control-flow-to-js.git"
+  },
+  "keywords": [
+    "control",
+    "flow",
+    "graph",
+    "test",
+    "debug",
+    "convert",
+    "to",
+    "javascript"
+  ],
+  "author": "Mikola Lysenko",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/mikolalysenko/control-flow-to-js/issues"
+  },
+  "homepage": "https://github.com/mikolalysenko/control-flow-to-js"
+}
