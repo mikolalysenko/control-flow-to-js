@@ -38,7 +38,7 @@ function convertClosure(closure) {
       if(op.type === "UnaryOperator") {
         code.push(value(op.destination), "=", op.operator, value(op.argument), ";")
       } else if(op.type === "BinaryOperator") {
-        code.push(value(op.destination), "=", value(op.left), op.operator, op.right, ";")
+        code.push(value(op.destination), "=", value(op.left), op.operator, value(op.right), ";")
       } else {
         throw new Error("Invalid operator: " + op.type)
       }
