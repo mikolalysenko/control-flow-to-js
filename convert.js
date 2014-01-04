@@ -12,8 +12,12 @@ function value(v) {
       return "VAR_" + v.id
     }
   } else if(v.type === "Literal") {
-    if(typeof v === "string") {
+    if(typeof v.value === "string") {
       return "'" + v.value.replace(/\\/g, "\\\\").replace(/\'/g, "\\'") + "'"
+    } else if(typeof v.value === "undefined") {
+      return "void 0"
+    } else if(v.value === null) {
+      return "null"
     } else {
       return v.value
     }
@@ -23,11 +27,19 @@ function value(v) {
 function convertClosure(closure) {
 
   var code = ["function ", closure.name, "(", closure.arguments.join(), "){"]
-  code.push("var ", closure.variables.map(value).join(), ";VAR_THIS=this;")
+  code.push("var ", closure.variables.map(value).join(), ";VAR_this=this;")
 
   for(var i=0; i<closure.closures; ++i) {
     var cl = closure.closures[i]
     code.push(cl.id, "=", convertClosure(cl.closure), ";")
+  }
+
+  function term() {
+    code.push("try{")
+    code.push.apply(code, Array.prototype.slice.apply(arguments))
+    code.push("}catch(", value(b.terminator.exception, 
+        "){return BLOCK", b.catch, 
+        "()}return BLOCK", b.next, "()"))
   }
 
   for(var i=0; i<closure.blocks.length; ++i) {
@@ -45,63 +57,55 @@ function convertClosure(closure) {
     }
     switch(b.terminator.type) {
       case "JumpTerminator":
-        code.push("return BLOCK", b.terminator.next, "();")
+        code.push("return BLOCK", b.terminator.next, "()")
       break
 
       case "IfTerminator":
         code.push("if(", value(b.terminator.predicate), 
                   "){return BLOCK", b.terminator.consequent, 
-                  "()}else{return BLOCK", b.terminator.alternate, "()};") 
+                  "()}return BLOCK", b.terminator.alternate, "()") 
       break
 
       case "NewTerminator":
-        code.push("try{", value(b.terminator.result), "=new ", 
-            value(b.terminator.constructor), "(", b.terminator.arguments.map(value).join(), ")",
-            ";return BLOCK", b.next, "();",
-            "}catch(", value(b.exception), "){return BLOCK", b.catch, "()};")
+        term(value(b.terminator.result), 
+            "=new ", value(b.terminator.constructor), 
+            "(", b.terminator.arguments.map(value).join(), ")")
       break
 
       case "SetTerminator":
-        code.push("try{", value(b.terminator.result), "=", 
-            value(b.terminator.object), "[", value(b.terminator.property), "]=", value(b.terminator.value),
-            ";return BLOCK", b.next, "();",
-            "}catch(", value(b.exception), "){return BLOCK", b.catch, "()};")
+        term(value(b.terminator.result), "=", 
+            value(b.terminator.object), "[", value(b.terminator.property), "]=", 
+            value(b.terminator.value))
       break
 
       case "GetTerminator":
-        code.push("try{", value(b.terminator.result), "=", 
-            value(b.terminator.object), "[", value(b.terminator.property), "]",
-            ";return BLOCK", b.next, "();",
-            "}catch(", value(b.exception), "){return BLOCK", b.catch, "()};")
+        term(value(b.terminator.result), "=", 
+            value(b.terminator.object), "[", value(b.terminator.property), "]")
       break
       
       case "DeleteTerminator":
-        code.push("try{", value(b.terminator.result), "=delete ", 
-            value(b.terminator.object), "[", value(b.terminator.property), "]",
-            ";return BLOCK", b.next, "();",
-            "}catch(", value(b.exception), "){return BLOCK", b.catch, "()};")
+        term(value(b.terminator.result), "=delete ", 
+            value(b.terminator.object), "[", value(b.terminator.property), "]")
       break
 
       case "HasTerminator":
-        code.push("try{", value(b.terminator.result), "=", 
-            value(b.terminator.property), " in ", value(b.terminator.object),
-            ";return BLOCK", b.next, "();",
-            "}catch(", value(b.exception), "){return BLOCK", b.catch, "()};")
+        term(value(b.terminator.result), "=", 
+            value(b.terminator.property), " in ", value(b.terminator.object))
       break
 
       case "CallTerminator":
-        code.push("try{", value(b.terminator.result), "=", 
-            value(b.terminator.callee), ".call(", value(b.terminator.object), b.terminator.arguments.map(value).join(), ")",
-            ";return BLOCK", b.next, "();",
-            "}catch(", value(b.exception), "){return BLOCK", b.catch, "()};")
+        term(value(b.terminator.result), "=", 
+            value(b.terminator.callee), ".call(", 
+              value(b.terminator.object), 
+              b.terminator.arguments.map(value).join(), ")")
       break
 
       case "ReturnTerminator":
-        code.push("return ", value(b.terminator.result), ";")
+        code.push("return ", value(b.terminator.result))
       break
 
       case "ThrowTerminator":
-        code.push("throw ", value(b.terminator.exception), ";")
+        code.push("throw ", value(b.terminator.exception))
       break
 
       default:
