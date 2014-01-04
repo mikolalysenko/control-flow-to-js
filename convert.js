@@ -3,9 +3,10 @@
 module.exports = convertCFGtoJS
 
 function value(v) {
-  console.log(v)
   if(v.type === "VariableId" || v.type === "Variable") {
-    if(v.id.charAt(0) === "~") {
+    if(v.id === "~global") {
+      return "this"
+    } else if(v.id.charAt(0) === "~") {
       return "TMP_" + v.id.substr(1)
     } else {
       return "VAR_" + v.id
@@ -19,20 +20,17 @@ function value(v) {
   }
 }
 
-function convertCFGtoJS(closure) {
-
-  console.log(closure, closure.blocks[2])
+function convertClosure(closure) {
 
   var code = ["function ", closure.name, "(", closure.arguments.join(), "){"]
-  code.push("var ", closure.variables.map(value).join(), ";THIS=this;")
+  code.push("var ", closure.variables.map(value).join(), ";VAR_THIS=this;")
 
   for(var i=0; i<closure.closures; ++i) {
     var cl = closure.closures[i]
-    code.push(cl.id, "=", convertCFGtoJS(cl.closure), ";")
+    code.push(cl.id, "=", convertClosure(cl.closure), ";")
   }
 
   for(var i=0; i<closure.blocks.length; ++i) {
-    console.log("emit block:", i)
     var b = closure.blocks[i]
     code.push("function BLOCK", i, "(){")
     for(var j=0; j<b.body.length; ++j) {
@@ -47,13 +45,13 @@ function convertCFGtoJS(closure) {
     }
     switch(b.terminator.type) {
       case "JumpTerminator":
-        code.push("BLOCK", b.terminator.next, "();")
+        code.push("return BLOCK", b.terminator.next, "();")
       break
 
       case "IfTerminator":
         code.push("if(", value(b.terminator.predicate), 
-                  "){BLOCK", b.terminator.consequent, 
-                  "()}else{BLOCK", b.terminator.alternate, "()};") 
+                  "){return BLOCK", b.terminator.consequent, 
+                  "()}else{return BLOCK", b.terminator.alternate, "()};") 
       break
 
       case "NewTerminator":
@@ -112,7 +110,11 @@ function convertCFGtoJS(closure) {
     code.push("};")
   }
 
-  code.push("return BLOCKS", closure.entry, "();}")
+  code.push("return BLOCK", closure.entry, "();}")
 
   return code.join("")
+}
+
+function convertCFGtoJS(root) {
+  return ";(" + convertClosure(root) + ")();"
 }
