@@ -4,9 +4,7 @@ module.exports = convertCFGtoJS
 
 function value(v) {
   if(v.type === "VariableId" || v.type === "Variable") {
-    if(v.id === "~global") {
-      return "this"
-    } else if(v.id.charAt(0) === "~") {
+    if(v.id.charAt(0) === "~") {
       return "TMP_" + v.id.substr(1)
     } else {
       return "VAR_" + v.id
