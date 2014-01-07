@@ -35,9 +35,9 @@ function convertClosure(closure) {
   function term() {
     code.push("try{")
     code.push.apply(code, Array.prototype.slice.apply(arguments))
-    code.push("}catch(", value(b.terminator.exception, 
-        "){return BLOCK", b.catch, 
-        "()}return BLOCK", b.next, "()"))
+    code.push("}catch(e){", value(b.terminator.exception), 
+        "=e;return BLOCK", b.terminator.catch, 
+        "()}return BLOCK", b.terminator.next, "()")
   }
 
   for(var i=0; i<closure.blocks.length; ++i) {
@@ -46,9 +46,9 @@ function convertClosure(closure) {
     for(var j=0; j<b.body.length; ++j) {
       var op = b.body[j]
       if(op.type === "UnaryOperator") {
-        code.push(value(op.destination), "=", op.operator, value(op.argument), ";")
+        code.push(value(op.result), "=", op.operator, value(op.argument), ";")
       } else if(op.type === "BinaryOperator") {
-        code.push(value(op.destination), "=", value(op.left), op.operator, value(op.right), ";")
+        code.push(value(op.result), "=", value(op.left), op.operator, value(op.right), ";")
       } else {
         throw new Error("Invalid operator: " + op.type)
       }
