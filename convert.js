@@ -4,7 +4,9 @@ module.exports = convertCFGtoJS
 
 function value(v) {
   if(v.type === "VariableId" || v.type === "Variable") {
-    if(v.id.charAt(0) === "~") {
+    if(v.id === "arguments") {
+      return "arguments"
+    } else if(v.id.charAt(0) === "~") {
       return "TMP_" + v.id.substr(1)
     } else {
       return "VAR_" + v.id
@@ -34,7 +36,7 @@ function convertClosure(closure) {
 
   function term() {
     code.push("try{")
-    code.push.apply(code, Array.prototype.slice.apply(arguments))
+    code.push.apply(code, Array.prototype.slice.call(arguments))
     code.push("}catch(e){", value(b.terminator.exception), 
         "=e;return BLOCK", b.terminator.catch, 
         "()}return BLOCK", b.terminator.next, "()")
@@ -94,8 +96,10 @@ function convertClosure(closure) {
       case "CallTerminator":
         term(value(b.terminator.result), "=", 
             value(b.terminator.callee), ".call(", 
-              value(b.terminator.object), 
-              b.terminator.arguments.map(value).join(), ")")
+              [b.terminator.object]
+              .concat(b.terminator.arguments)
+              .map(value)
+              .join(), ")")
       break
 
       case "ReturnTerminator":
