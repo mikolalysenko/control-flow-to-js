@@ -26,7 +26,7 @@ function value(v) {
 
 function convertClosure(closure) {
 
-  var code = ["function ", closure.name, "(", closure.arguments.join(), "){"]
+  var code = ["function VAR_", closure.name, "(", closure.arguments.map(value).join(), "){"]
   code.push("var ", closure.variables.map(value).join(), ";VAR_this=this;")
 
   for(var i=0; i<closure.closures.length; ++i) {
