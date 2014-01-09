@@ -29,9 +29,9 @@ function convertClosure(closure) {
   var code = ["function ", closure.name, "(", closure.arguments.join(), "){"]
   code.push("var ", closure.variables.map(value).join(), ";VAR_this=this;")
 
-  for(var i=0; i<closure.closures; ++i) {
+  for(var i=0; i<closure.closures.length; ++i) {
     var cl = closure.closures[i]
-    code.push(cl.id, "=", convertClosure(cl.closure), ";")
+    code.push(value(cl.id), "=", convertClosure(cl.closure), ";")
   }
 
   function term() {
